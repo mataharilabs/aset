@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASET — AsiaCommerce Assets Management
 
-## Getting Started
+Sistem manajemen aset fisik & digital: QR tracking, approval workflow, perawatan, penyusutan, keuangan, dan laporan.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS 4** + komponen UI custom
+- **Prisma 6** + **PostgreSQL (Neon)** — via Neon serverless driver (koneksi lewat WebSocket/443)
+- **Auth.js v5** (NextAuth) — login credentials + role-based session
+- **Recharts**, **qrcode.react**, **html5-qrcode**
+
+## Fitur
+
+- Multi-perusahaan (multi-tenant) dengan isolasi data per `companyId`
+- 3 role: **Super Admin**, **Asset Manager**, **Asset Handler**
+- Aset fisik & digital, kode otomatis `AC-YYYY-XXXX`
+- Master data: kategori, lokasi, merk, owner
+- QR code per aset (cetak label + halaman scan publik `/scan/[code]`) + scanner kamera
+- Transaksi aset (mutasi / penghapusan / serah terima) dengan **approval**
+- Perawatan berjadwal + tandai selesai
+- Keuangan aset (pemasukan/pengeluaran/pajak/asuransi) + ringkasan
+- Laporan penyusutan (garis lurus / saldo menurun) + ekspor CSV/Excel + cetak PDF
+- Audit log & notifikasi in-app
+- Manajemen pengguna & profil perusahaan
+
+## Menjalankan Lokal
+
+### 1. Environment
+
+Salin `.env.example` ke `.env` dan isi:
+
+```env
+DATABASE_URL="postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
+AUTH_SECRET="<hasil: openssl rand -base64 32>"
+AUTH_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Neon:** pastikan project **Active** di https://console.neon.tech (compute free-tier bisa auto-suspend). Gunakan connection string **pooler**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Setup Database
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run db:push     # buat semua tabel di Neon
+npm run db:seed     # isi data demo
+```
 
-## Learn More
+### 3. Jalankan
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev         # http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Kredensial Demo (setelah seed)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Role          | Email                    | Password    |
+| ------------- | ------------------------ | ----------- |
+| Super Admin   | admin@asiacommerce.net   | password123 |
+| Asset Manager | manager@asiacommerce.net | password123 |
+| Asset Handler | handler@asiacommerce.net | password123 |
 
-## Deploy on Vercel
+Atau daftar perusahaan baru di `/register`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Script
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script              | Fungsi                         |
+| ------------------- | ------------------------------ |
+| `npm run dev`       | Development server             |
+| `npm run build`     | Build production               |
+| `npm run db:push`   | Sinkron schema ke database     |
+| `npm run db:seed`   | Isi data demo                  |
+| `npm run db:studio` | Prisma Studio (GUI database)   |
+
+## Struktur
+
+```
+src/
+├── app/
+│   ├── (auth)/            login, register
+│   ├── (dashboard)/       dashboard, assets, transactions, maintenance,
+│   │                      financial, reports, audit, master, settings, scan
+│   ├── scan/[code]/       halaman scan QR publik
+│   └── api/               REST API (assets, master, transactions, ...)
+├── components/            ui, layout, assets, qr, transactions, dll
+├── lib/                   prisma, auth/session, validations, services
+└── middleware.ts          proteksi route
+```
+
+## Deploy (Vercel)
+
+1. Push ke GitHub, import di Vercel
+2. Set env vars (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `NEXTAUTH_URL`)
+3. Deploy — `npm run build` menjalankan `prisma generate` otomatis

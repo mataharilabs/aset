@@ -1,7 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+neonConfig.webSocketConstructor = ws;
+
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -58,42 +64,18 @@ async function main() {
     }),
   ]);
 
-  // Master data
-  const [elektronik, kendaraan, digital] = await Promise.all([
-    prisma.category.upsert({
-      where: {
-        name_companyId_parentId: {
-          name: "Elektronik",
-          companyId: company.id,
-          parentId: null as unknown as string,
-        },
-      },
-      update: {},
-      create: { name: "Elektronik", companyId: company.id },
-    }),
-    prisma.category.upsert({
-      where: {
-        name_companyId_parentId: {
-          name: "Kendaraan",
-          companyId: company.id,
-          parentId: null as unknown as string,
-        },
-      },
-      update: {},
-      create: { name: "Kendaraan", companyId: company.id },
-    }),
-    prisma.category.upsert({
-      where: {
-        name_companyId_parentId: {
-          name: "Aset Digital",
-          companyId: company.id,
-          parentId: null as unknown as string,
-        },
-      },
-      update: {},
-      create: { name: "Aset Digital", companyId: company.id },
-    }),
-  ]);
+  // Master data - kategori (findFirst + create karena parentId null)
+  async function ensureCategory(name: string) {
+    const found = await prisma.category.findFirst({
+      where: { name, companyId: company.id, parentId: null },
+    });
+    if (found) return found;
+    return prisma.category.create({ data: { name, companyId: company.id } });
+  }
+
+  const elektronik = await ensureCategory("Elektronik");
+  const kendaraan = await ensureCategory("Kendaraan");
+  const digital = await ensureCategory("Aset Digital");
 
   const [hq, gudang] = await Promise.all([
     prisma.location.upsert({

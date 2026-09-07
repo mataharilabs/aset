@@ -24,24 +24,18 @@ export const authConfig = {
     jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        // @ts-expect-error - custom fields diteruskan dari authorize
-        token.role = user.role;
-        // @ts-expect-error - custom fields diteruskan dari authorize
-        token.companyId = user.companyId;
-        // @ts-expect-error - custom fields diteruskan dari authorize
-        token.companyName = user.companyName;
+        token.role = user.role!;
+        token.companyId = user.companyId!;
+        token.companyName = user.companyName!;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        // @ts-expect-error - custom session fields
-        session.user.role = token.role;
-        // @ts-expect-error - custom session fields
-        session.user.companyId = token.companyId;
-        // @ts-expect-error - custom session fields
-        session.user.companyName = token.companyName;
+        session.user.role = token.role as typeof session.user.role;
+        session.user.companyId = token.companyId as string;
+        session.user.companyName = token.companyName as string;
       }
       return session;
     },
