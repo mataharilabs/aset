@@ -1,0 +1,510 @@
+// ASET - AsiaCommerce Assets Management
+// Prisma schema (PostgreSQL / Neon)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// MULTI-TENANCY
+// ============================================================
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  assets       Asset[]
+  categories   Category[]
+  locations    Location[]
+  brands       Brand[]
+  owners       Owner[]
+  transactions AssetTransaction[]
+  maintenances Maintenance[]
+  financials   Financial[]
+  auditLogs    AuditLog[]
+
+  @@map("companies")
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  image     String?
+  password  String
+  role      UserRole @default(ASSET_HANDLER)
+  isActive  Boolean  @default(true)
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAssets   Asset[]            @relation("AssetCreatedBy")
+  assignedAssets  Asset[]            @relation("AssetAssignedTo")
+  requestedTxns   AssetTransaction[] @relation("TxnRequestedBy")
+  maintenanceLogs MaintenanceLog[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+
+  @@index([companyId])
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ASSET_MANAGER
+  ASSET_HANDLER
+}
+
+// ============================================================
+// MASTER DATA
+// ============================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company  Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  assets   Asset[]
+
+  @@unique([name, companyId, parentId])
+  @@index([companyId])
+  @@map("categories")
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets             Asset[]
+  transactionTargets AssetTransaction[] @relation("TxnTargetLocation")
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@map("locations")
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets  Asset[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@map("brands")
+}
+
+model Owner {
+  id         String   @id @default(cuid())
+  name       String
+  email      String?
+  phone      String?
+  department String?
+  companyId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assets  Asset[]
+
+  @@unique([name, companyId])
+  @@index([companyId])
+  @@map("owners")
+}
+
+// ============================================================
+// ASSET CORE
+// ============================================================
+
+model Asset {
+  id          String      @id @default(cuid())
+  systemCode  String      @unique
+  name        String
+  description String?
+  assetType   AssetType   @default(PHYSICAL)
+  status      AssetStatus @default(ACTIVE)
+
+  categoryId String
+
+  serialNumber   String?
+  productionCode String?
+  brandId        String?
+  model          String?
+  color          String?
+  condition      AssetCondition @default(GOOD)
+
+  ownerId      String?
+  locationId   String?
+  assignedToId String?
+
+  purchaseDate       DateTime?
+  purchasePrice      Decimal?           @db.Decimal(15, 2)
+  currentValue       Decimal?           @db.Decimal(15, 2)
+  usefulLifeYears    Int?
+  salvageValue       Decimal?           @db.Decimal(15, 2)
+  depreciationMethod DepreciationMethod @default(STRAIGHT_LINE)
+
+  // Digital asset fields
+  domain      String?
+  expiryDate  DateTime?
+  credentials Json?
+  licenseKey  String?
+
+  images    String[]
+  documents String[]
+  qrCodeUrl String?
+
+  tags           String[]
+  notes          String?
+  companyId      String
+  createdById    String
+  approvalStatus ApprovalStatus @default(APPROVED)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  company       Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category      Category             @relation(fields: [categoryId], references: [id])
+  brand         Brand?               @relation(fields: [brandId], references: [id])
+  owner         Owner?               @relation(fields: [ownerId], references: [id])
+  location      Location?            @relation(fields: [locationId], references: [id])
+  assignedTo    User?                @relation("AssetAssignedTo", fields: [assignedToId], references: [id])
+  createdBy     User                 @relation("AssetCreatedBy", fields: [createdById], references: [id])
+  transactions  AssetTransaction[]
+  maintenances  Maintenance[]
+  financials    Financial[]
+  depreciations DepreciationRecord[]
+  auditLogs     AuditLog[]
+  approvals     ApprovalStep[]
+
+  @@index([companyId, status])
+  @@index([categoryId])
+  @@map("assets")
+}
+
+enum AssetType {
+  PHYSICAL
+  DIGITAL
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  IN_MAINTENANCE
+  DISPOSED
+  TRANSFERRED
+  LOST
+}
+
+enum AssetCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+  DOUBLE_DECLINING
+}
+
+enum ApprovalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================================
+// APPROVAL
+// ============================================================
+
+model ApprovalStep {
+  id         String         @id @default(cuid())
+  assetId    String
+  stepOrder  Int
+  role       UserRole
+  approverId String?
+  status     ApprovalStatus @default(PENDING)
+  notes      String?
+  actedAt    DateTime?
+  createdAt  DateTime       @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@map("approval_steps")
+}
+
+// ============================================================
+// TRANSACTIONS
+// ============================================================
+
+model AssetTransaction {
+  id              String            @id @default(cuid())
+  transactionCode String            @unique
+  type            TransactionType
+  status          TransactionStatus @default(PENDING)
+  assetId         String
+  requestedById   String
+  companyId       String
+
+  fromLocationId String?
+  toLocationId   String?
+  fromOwnerId    String?
+  toOwnerId      String?
+
+  disposalReason String?
+  disposalValue  Decimal?  @db.Decimal(15, 2)
+  disposalDate   DateTime?
+
+  notes       String?
+  attachments String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  asset          Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  requestedBy    User      @relation("TxnRequestedBy", fields: [requestedById], references: [id])
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  targetLocation Location? @relation("TxnTargetLocation", fields: [toLocationId], references: [id])
+
+  @@index([companyId, status])
+  @@map("asset_transactions")
+}
+
+enum TransactionType {
+  MUTATION
+  DISPOSAL
+  REVERSE_DISPOSAL
+  HANDOVER
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// MAINTENANCE
+// ============================================================
+
+model Maintenance {
+  id            String                @id @default(cuid())
+  assetId       String
+  companyId     String
+  type          MaintenanceType
+  frequency     MaintenanceFrequency?
+  scheduledDate DateTime
+  completedDate DateTime?
+  status        MaintenanceStatus     @default(SCHEDULED)
+  title         String
+  description   String?
+  cost          Decimal?              @db.Decimal(15, 2)
+  vendor        String?
+  notes         String?
+  attachments   String[]
+  reminderDays  Int                   @default(7)
+  nextScheduled DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  asset   Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  logs    MaintenanceLog[]
+
+  @@index([companyId, status])
+  @@index([scheduledDate])
+  @@map("maintenances")
+}
+
+enum MaintenanceType {
+  SCHEDULED
+  CORRECTIVE
+  PREVENTIVE
+  ONE_TIME
+}
+
+enum MaintenanceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+model MaintenanceLog {
+  id            String   @id @default(cuid())
+  maintenanceId String
+  userId        String
+  action        String
+  notes         String?
+  cost          Decimal? @db.Decimal(15, 2)
+  attachments   String[]
+  createdAt     DateTime @default(now())
+
+  maintenance Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@map("maintenance_logs")
+}
+
+// ============================================================
+// FINANCIAL
+// ============================================================
+
+model Financial {
+  id            String        @id @default(cuid())
+  assetId       String
+  companyId     String
+  type          FinancialType
+  amount        Decimal       @db.Decimal(15, 2)
+  currency      String        @default("IDR")
+  description   String
+  category      String?
+  date          DateTime
+  vendor        String?
+  invoiceNumber String?
+  taxAmount     Decimal?      @db.Decimal(15, 2)
+  attachments   String[]
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, type])
+  @@index([assetId])
+  @@map("financials")
+}
+
+enum FinancialType {
+  INCOME
+  EXPENSE
+  TAX
+  INSURANCE
+}
+
+// ============================================================
+// DEPRECIATION
+// ============================================================
+
+model DepreciationRecord {
+  id              String             @id @default(cuid())
+  assetId         String
+  year            Int
+  month           Int
+  openingValue    Decimal            @db.Decimal(15, 2)
+  depreciationAmt Decimal            @db.Decimal(15, 2)
+  closingValue    Decimal            @db.Decimal(15, 2)
+  accumulatedDep  Decimal            @db.Decimal(15, 2)
+  method          DepreciationMethod
+  createdAt       DateTime           @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, year, month])
+  @@map("depreciation_records")
+}
+
+// ============================================================
+// AUDIT & NOTIFICATIONS
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String
+  assetId    String?
+  action     String
+  entityType String
+  entityId   String
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+  asset   Asset?  @relation(fields: [assetId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  title      String
+  message    String
+  link       String?
+  isRead     Boolean          @default(false)
+  entityType String?
+  entityId   String?
+  createdAt  DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  MAINTENANCE_DUE
+  APPROVAL_REQUIRED
+  APPROVAL_RESULT
+  ASSET_EXPIRY
+  TRANSACTION_STATUS
+  SYSTEM
+}
