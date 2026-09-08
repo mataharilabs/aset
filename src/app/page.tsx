@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/session";
+import { isAuthenticated } from "@/lib/session";
 
 export default async function HomePage() {
-  const user = await getCurrentUser();
-  if (user) redirect("/dashboard");
+  // Cukup cek sesi mentah; kontrol akses ASET ditangani di /dashboard.
+  if (await isAuthenticated()) redirect("/dashboard");
   redirect("/login");
 }

@@ -1,5 +1,7 @@
 import type { DefaultSession } from "next-auth";
 
+type AppRoleMap = Record<string, string>;
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -7,6 +9,7 @@ declare module "next-auth" {
       role: "SUPER_ADMIN" | "ASSET_MANAGER" | "ASSET_HANDLER";
       companyId: string;
       companyName: string;
+      apps?: AppRoleMap; // klaim SSO: akses per-aplikasi
     } & DefaultSession["user"];
   }
 
@@ -20,8 +23,9 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "SUPER_ADMIN" | "ASSET_MANAGER" | "ASSET_HANDLER";
-    companyId: string;
-    companyName: string;
+    role?: "SUPER_ADMIN" | "ASSET_MANAGER" | "ASSET_HANDLER";
+    companyId?: string;
+    companyName?: string;
+    apps?: AppRoleMap;
   }
 }

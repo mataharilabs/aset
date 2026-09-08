@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/session";
+import { requireUser, AuthError } from "@/lib/session";
+import type { SessionUser } from "@/lib/session";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import type { NavRole } from "@/lib/constants";
@@ -9,8 +10,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  let user: SessionUser;
+  try {
+    user = await requireUser();
+  } catch (e) {
+    if (e instanceof AuthError && e.status === 403) redirect("/no-access");
+    redirect("/login");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

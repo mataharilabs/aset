@@ -94,23 +94,35 @@ src/
 2. Set env vars (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `NEXTAUTH_URL`, `AUTH_TRUST_HOST=true`)
 3. Deploy — `npm run build` menjalankan `prisma generate` otomatis
 
-## Data User & Roadmap SSO
+## Integrasi SSO (sso.asiacommerce.net)
 
-`User` (inti auth: email, password, role, phone) sengaja dipisah dari `UserProfile`
-(1‑1: data personal + kepegawaian dasar). Field payroll/absensi/cuti/pendidikan/performa
-**tidak** disimpan di sini — itu domain aplikasi **HRIS** terpisah.
+ASET dapat memakai **SSO terpusat** (`sso.asiacommerce.net`) sebagai sumber identitas &
+login tunggal lintas aplikasi `*.asiacommerce.net`. Diaktifkan lewat flag `SSO_ENABLED`.
 
-Arah SSO lintas aplikasi (`aset`, `hris`, dll di `*.asiacommerce.net`):
+**Env ASET (Vercel) untuk mode SSO:**
 
-- **Central Identity DB**: pindahkan `User` + `UserProfile` + auth ke satu database Neon
-  terpisah sebagai sumber identitas tunggal.
-- **Shared session**: semua app memakai **`AUTH_SECRET` yang sama** dan cookie Auth.js
-  di-scope `domain=.asiacommerce.net` → login sekali berlaku di semua subdomain.
-- **DB per app**: tiap app punya database domainnya sendiri, mereferensikan user lewat
-  `userId` (bukan foreign key lintas-DB, karena Prisma tidak mendukungnya).
-- **Ekstraksi nanti**: ASET menyimpan tabel `users` ringkas (id, email, nama) yang
-  disinkron dari Identity DB (via API/OIDC), sementara relasi domain (aset, transaksi)
-  tetap memakai `userId`.
+```
+SSO_ENABLED=true
+SSO_URL=https://sso.asiacommerce.net
+AUTH_SECRET=<SAMA PERSIS dengan SSO>     # wajib identik agar cookie terbaca
+COOKIE_DOMAIN=.asiacommerce.net
+AUTH_TRUST_HOST=true
+DATABASE_URL=<Neon ASET (tetap)>
+```
 
-Desain sekarang sudah SSO-ready: `email` unik global, auth terpisah di `User`,
-data profil terisolasi di `UserProfile`.
+**Perilaku saat `SSO_ENABLED=true`:**
+
+- Cookie sesi Auth.js di-scope `.asiacommerce.net` (nama & secret sama dgn SSO) → `auth()`
+  ASET membaca sesi terbitan SSO tanpa login ulang.
+- Middleware: request belum login → redirect ke `${SSO_URL}/login?callbackUrl=...`.
+- Halaman `/login`, `/register`, `/settings/users` ASET → redirect ke SSO. Logout → `${SSO_URL}/logout`.
+- **Role & company tetap referensi LOKAL**: `ensureLocalUser()` (`src/lib/session.ts`) mencocokkan
+  user berdasarkan **email**, membuat/menyinkron baris `users` lokal (company default ASET),
+  role diambil dari klaim `apps["ASET"]` pada JWT SSO. Data aset (difilter `companyId` lokal)
+  tetap konsisten.
+- User tanpa peran ASET di SSO → halaman `/no-access`.
+
+**Mematikan SSO:** set `SSO_ENABLED=false` (atau hapus) → ASET kembali ke login lokal seperti semula.
+
+> Manajemen user, profil (personal + kepegawaian), dan role per-aplikasi dikelola di SSO
+> (repo `mataharilabs/sso`). Field payroll/absensi/cuti/pendidikan/performa = domain HRIS.
