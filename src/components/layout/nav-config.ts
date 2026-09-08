@@ -8,7 +8,6 @@ import {
   FileBarChart,
   ScrollText,
   Database,
-  Users,
   Building2,
   QrCode,
   type LucideIcon,
@@ -58,7 +57,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Pengaturan",
     items: [
-      { label: "Pengguna", href: "/settings/users", icon: Users, roles: ADMIN },
       { label: "Perusahaan", href: "/settings/company", icon: Building2, roles: ADMIN },
     ],
   },
