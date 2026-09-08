@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, UserCog } from "lucide-react";
+import Link from "next/link";
+import { Plus, Loader2, UserCog, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Select } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,7 +14,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { toast } from "@/components/ui/toaster";
 import { ROLE_LABELS } from "@/lib/constants";
@@ -25,16 +24,22 @@ type User = {
   email: string;
   role: string;
   isActive: boolean;
+  profile?: {
+    jobTitle: string | null;
+    department: string | null;
+    employeeId: string | null;
+  } | null;
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  SUPER_ADMIN: "bg-violet-100 text-violet-700 border-violet-200",
+  ASSET_MANAGER: "bg-blue-100 text-blue-700 border-blue-200",
+  ASSET_HANDLER: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
 export function UsersManager({ currentUserId }: { currentUserId: string }) {
   const [rows, setRows] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Record<string, string>>({
-    role: "ASSET_HANDLER",
-  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,34 +57,12 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
     load();
   }, [load]);
 
-  async function save() {
-    setSaving(true);
+  async function toggleActive(u: User) {
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data.error)
-        throw new Error(data.error ?? data.issues?.[0]?.message ?? "Gagal");
-      toast("Pengguna ditambahkan", "success");
-      setOpen(false);
-      setForm({ role: "ASSET_HANDLER" });
-      load();
-    } catch (e) {
-      toast((e as Error).message, "error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function updateUser(id: string, patch: Record<string, unknown>) {
-    try {
-      const res = await fetch(`/api/users/${id}`, {
+      const res = await fetch(`/api/users/${u.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
+        body: JSON.stringify({ isActive: !u.isActive }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.error) throw new Error(data.error ?? "Gagal");
@@ -92,10 +75,12 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Tambah Pengguna
-        </Button>
+        <Link href="/settings/users/new">
+          <Button>
+            <Plus className="h-4 w-4" />
+            Tambah Pengguna
+          </Button>
+        </Link>
       </div>
 
       <Card>
@@ -111,6 +96,8 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
               <TableRow>
                 <TableHead>Nama</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Jabatan</TableHead>
+                <TableHead>Departemen</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
@@ -120,24 +107,33 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
               {rows.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium text-slate-800">
-                    {u.name ?? "-"}
+                    <Link
+                      href={`/settings/users/${u.id}`}
+                      className="hover:text-brand-600"
+                    >
+                      {u.name ?? "-"}
+                    </Link>
+                    {u.profile?.employeeId && (
+                      <span className="block font-mono text-xs text-slate-400">
+                        {u.profile.employeeId}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{u.email}</TableCell>
+                  <TableCell className="text-sm">
+                    {u.profile?.jobTitle ?? "-"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {u.profile?.department ?? "-"}
+                  </TableCell>
                   <TableCell>
-                    <Select
-                      value={u.role}
-                      disabled={u.id === currentUserId}
-                      onChange={(e) =>
-                        updateUser(u.id, { role: e.target.value })
+                    <Badge
+                      className={
+                        ROLE_COLORS[u.role] ?? "bg-slate-100 text-slate-600"
                       }
-                      className="h-8 w-40 text-xs"
                     >
-                      {Object.entries(ROLE_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>
-                          {v}
-                        </option>
-                      ))}
-                    </Select>
+                      {ROLE_LABELS[u.role] ?? u.role}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -151,17 +147,23 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {u.id !== currentUserId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          updateUser(u.id, { isActive: !u.isActive })
-                        }
-                      >
-                        {u.isActive ? "Nonaktifkan" : "Aktifkan"}
-                      </Button>
-                    )}
+                    <div className="flex justify-end gap-1">
+                      <Link href={`/settings/users/${u.id}`}>
+                        <Button variant="ghost" size="sm">
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      </Link>
+                      {u.id !== currentUserId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleActive(u)}
+                        >
+                          {u.isActive ? "Nonaktifkan" : "Aktifkan"}
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -169,65 +171,6 @@ export function UsersManager({ currentUserId }: { currentUserId: string }) {
           </Table>
         )}
       </Card>
-
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Tambah Pengguna"
-      >
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Nama *</Label>
-            <Input
-              value={form.name ?? ""}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Email *</Label>
-            <Input
-              type="email"
-              value={form.email ?? ""}
-              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Password *</Label>
-            <Input
-              type="password"
-              value={form.password ?? ""}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, password: e.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select
-              value={form.role ?? "ASSET_HANDLER"}
-              onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-            >
-              {Object.entries(ROLE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Batal
-            </Button>
-            <Button
-              onClick={save}
-              disabled={saving || !form.email || !form.password || !form.name}
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Simpan
-            </Button>
-          </div>
-        </div>
-      </Dialog>
     </div>
   );
 }

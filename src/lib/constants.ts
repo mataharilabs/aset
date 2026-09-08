@@ -96,6 +96,26 @@ export const FINANCIAL_TYPE_LABELS: Record<string, string> = {
   INSURANCE: "Asuransi",
 };
 
+// User profile (HRIS-lite)
+export const GENDER_LABELS: Record<string, string> = {
+  MALE: "Laki-laki",
+  FEMALE: "Perempuan",
+};
+
+export const MARITAL_STATUS_LABELS: Record<string, string> = {
+  SINGLE: "Belum Menikah",
+  MARRIED: "Menikah",
+  DIVORCED: "Cerai",
+  WIDOWED: "Janda/Duda",
+};
+
+export const EMPLOYMENT_STATUS_LABELS: Record<string, string> = {
+  PERMANENT: "Tetap (PKWTT)",
+  CONTRACT: "Kontrak (PKWT)",
+  INTERNSHIP: "Magang",
+  FREELANCE: "Freelance",
+};
+
 // Navigasi berdasarkan role
 export type NavRole = "SUPER_ADMIN" | "ASSET_MANAGER" | "ASSET_HANDLER";
 

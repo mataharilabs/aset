@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 import { handleApiError, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
-import { createUserSchema } from "@/lib/validations/user";
+import { createUserSchema, profileToPrisma } from "@/lib/validations/user";
 
 export async function GET() {
   try {
@@ -18,6 +18,9 @@ export async function GET() {
         role: true,
         isActive: true,
         createdAt: true,
+        profile: {
+          select: { jobTitle: true, department: true, employeeId: true },
+        },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -45,7 +48,12 @@ export async function POST(req: NextRequest) {
         email: data.email,
         password: hashed,
         role: data.role,
+        phone: data.phone ?? null,
+        reportsToId: data.reportsToId || null,
         companyId: admin.companyId,
+        ...(data.profile
+          ? { profile: { create: profileToPrisma(data.profile) } }
+          : {}),
       },
       select: { id: true, name: true, email: true, role: true, isActive: true },
     });

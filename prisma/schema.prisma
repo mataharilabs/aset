@@ -50,14 +50,22 @@ model User {
   name      String?
   email     String   @unique
   image     String?
+  phone     String?
   password  String
   role      UserRole @default(ASSET_HANDLER)
   isActive  Boolean  @default(true)
   companyId String
+
+  // Reporting line (atasan langsung) — self relation
+  reportsToId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  profile         UserProfile?
+  reportsTo       User?              @relation("Reporting", fields: [reportsToId], references: [id])
+  reports         User[]             @relation("Reporting")
   createdAssets   Asset[]            @relation("AssetCreatedBy")
   assignedAssets  Asset[]            @relation("AssetAssignedTo")
   requestedTxns   AssetTransaction[] @relation("TxnRequestedBy")
@@ -73,6 +81,65 @@ enum UserRole {
   SUPER_ADMIN
   ASSET_MANAGER
   ASSET_HANDLER
+}
+
+// Profil identitas (SSO-ready) — dipisah dari inti auth di User.
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Segment 1 — Personal (inti)
+  nickname        String?
+  birthPlace      String?
+  birthDate       DateTime?
+  gender          Gender?
+  maritalStatus   MaritalStatus?
+  nik             String?
+  kkNumber        String?
+  npwp            String?
+  passportNumber  String?
+  addressKtp      String?
+  addressDomicile String?
+  personalEmail   String?
+
+  emergencyName     String?
+  emergencyRelation String?
+  emergencyPhone    String?
+
+  // Segment 2 — Kepegawaian (dasar)
+  employeeId       String?
+  jobTitle         String?
+  department       String?
+  level            String?
+  workLocation     String?
+  joinDate         DateTime?
+  endDate          DateTime?
+  employmentStatus EmploymentStatus?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum EmploymentStatus {
+  PERMANENT
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
 }
 
 // ============================================================

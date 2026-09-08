@@ -91,5 +91,26 @@ src/
 ## Deploy (Vercel)
 
 1. Push ke GitHub, import di Vercel
-2. Set env vars (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `NEXTAUTH_URL`)
+2. Set env vars (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `NEXTAUTH_URL`, `AUTH_TRUST_HOST=true`)
 3. Deploy — `npm run build` menjalankan `prisma generate` otomatis
+
+## Data User & Roadmap SSO
+
+`User` (inti auth: email, password, role, phone) sengaja dipisah dari `UserProfile`
+(1‑1: data personal + kepegawaian dasar). Field payroll/absensi/cuti/pendidikan/performa
+**tidak** disimpan di sini — itu domain aplikasi **HRIS** terpisah.
+
+Arah SSO lintas aplikasi (`aset`, `hris`, dll di `*.asiacommerce.net`):
+
+- **Central Identity DB**: pindahkan `User` + `UserProfile` + auth ke satu database Neon
+  terpisah sebagai sumber identitas tunggal.
+- **Shared session**: semua app memakai **`AUTH_SECRET` yang sama** dan cookie Auth.js
+  di-scope `domain=.asiacommerce.net` → login sekali berlaku di semua subdomain.
+- **DB per app**: tiap app punya database domainnya sendiri, mereferensikan user lewat
+  `userId` (bukan foreign key lintas-DB, karena Prisma tidak mendukungnya).
+- **Ekstraksi nanti**: ASET menyimpan tabel `users` ringkas (id, email, nama) yang
+  disinkron dari Identity DB (via API/OIDC), sementara relasi domain (aset, transaksi)
+  tetap memakai `userId`.
+
+Desain sekarang sudah SSO-ready: `email` unik global, auth terpisah di `User`,
+data profil terisolasi di `UserProfile`.
