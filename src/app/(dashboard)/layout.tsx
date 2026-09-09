@@ -28,7 +28,9 @@ export default async function DashboardLayout({
           role={user.role}
           companyName={user.companyName}
         />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-white via-brand-50/30 to-white p-6">
+          <div className="animate-fade-up">{children}</div>
+        </main>
       </div>
     </div>
   );
