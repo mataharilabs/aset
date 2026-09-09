@@ -23,7 +23,7 @@ async function syncOwnersFromSSO(companyId: string, ssoCompanyId?: string) {
 
 async function upsertOwnerMirror(companyId: string, h: AppUser) {
   const existing =
-    (await prisma.owner.findUnique({ where: { ssoUserId: h.id } })) ??
+    (await prisma.owner.findFirst({ where: { ssoUserId: h.id } })) ??
     (h.email
       ? await prisma.owner.findFirst({
           where: { email: h.email, companyId },

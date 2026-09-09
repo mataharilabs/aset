@@ -203,7 +203,7 @@ model Owner {
   email      String?
   phone      String?
   department String?
-  ssoUserId  String?  @unique // user SSO (ASET:ASSET_HANDLER) yang dicerminkan
+  ssoUserId  String? // user SSO (ASET:ASSET_HANDLER) yang dicerminkan
   companyId  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -213,6 +213,7 @@ model Owner {
 
   @@unique([name, companyId])
   @@index([companyId])
+  @@index([ssoUserId])
   @@map("owners")
 }
 
