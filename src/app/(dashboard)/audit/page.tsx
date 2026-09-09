@@ -15,6 +15,7 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ScrollText } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { ClearAuditButton } from "@/components/audit/ClearAuditButton";
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -41,6 +42,7 @@ export default async function AuditPage() {
       <PageHeader
         title="Audit Log"
         description="Riwayat aktivitas seluruh pengguna dalam sistem."
+        action={user.role === "SUPER_ADMIN" ? <ClearAuditButton /> : undefined}
       />
       <Card>
         {logs.length === 0 ? (

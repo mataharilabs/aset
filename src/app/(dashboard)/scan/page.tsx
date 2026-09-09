@@ -1,10 +1,12 @@
-import { requireUser } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { requireUser, isManagerUp } from "@/lib/session";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { QRScanner } from "@/components/qr/QRScanner";
 
 export default async function ScanPage() {
-  await requireUser();
+  const user = await requireUser();
+  if (!isManagerUp(user.role)) redirect("/assets");
   return (
     <div className="mx-auto max-w-xl">
       <PageHeader

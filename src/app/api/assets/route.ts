@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireRole } from "@/lib/session";
+import { requireUser, requireRole, handlerOwnerId } from "@/lib/session";
 import { handleApiError, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { assetSchema } from "@/lib/validations/asset";
@@ -18,8 +18,16 @@ export async function GET(req: NextRequest) {
     const categoryId = sp.get("categoryId") || undefined;
     const assetType = sp.get("assetType") || undefined;
 
+    // ASSET_HANDLER hanya melihat aset yang ia PIC/Owner-nya
+    let handlerFilter: Prisma.AssetWhereInput = {};
+    if (user.role === "ASSET_HANDLER") {
+      const ownerId = await handlerOwnerId(user);
+      handlerFilter = { ownerId: ownerId ?? "__none__" };
+    }
+
     const where: Prisma.AssetWhereInput = {
       companyId: user.companyId,
+      ...handlerFilter,
       ...(status ? { status: status as Prisma.AssetWhereInput["status"] } : {}),
       ...(categoryId ? { categoryId } : {}),
       ...(assetType

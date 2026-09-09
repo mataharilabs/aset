@@ -27,7 +27,6 @@ type Options = {
   brands: Option[];
   locations: Option[];
   owners: Option[];
-  users: Option[];
 };
 
 type Props = {
@@ -42,7 +41,6 @@ export function AssetForm({ assetId, initial }: Props) {
     brands: [],
     locations: [],
     owners: [],
-    users: [],
   });
 
   const {
@@ -105,6 +103,15 @@ export function AssetForm({ assetId, initial }: Props) {
           <CardTitle>Informasi Umum</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
+          {assetId && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Kode Aset</Label>
+              <Input {...register("systemCode")} className="font-mono" />
+              <p className="text-xs text-slate-400">
+                Ubah dengan hati-hati — kode harus unik.
+              </p>
+            </div>
+          )}
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Nama Aset *</Label>
             <Input {...register("name")} placeholder="Contoh: Laptop Dell XPS" />
@@ -236,17 +243,6 @@ export function AssetForm({ assetId, initial }: Props) {
               {options.locations.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Ditugaskan ke</Label>
-            <Select {...register("assignedToId")}>
-              <option value="">Pilih pengguna</option>
-              {options.users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
                 </option>
               ))}
             </Select>

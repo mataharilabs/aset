@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, ArrowLeftRight } from "lucide-react";
-import { requireUser } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { requireUser, isManagerUp } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { formatDate } from "@/lib/utils";
 
 export default async function TransactionsPage() {
   const user = await requireUser();
+  if (!isManagerUp(user.role)) redirect("/assets");
   const items = await prisma.assetTransaction.findMany({
     where: { companyId: user.companyId },
     include: {

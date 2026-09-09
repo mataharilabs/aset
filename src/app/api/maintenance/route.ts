@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireRole } from "@/lib/session";
+import { requireUser, requireRole, handlerOwnerId } from "@/lib/session";
 import { handleApiError, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { maintenanceSchema } from "@/lib/validations/maintenance";
@@ -8,8 +8,13 @@ import { maintenanceSchema } from "@/lib/validations/maintenance";
 export async function GET() {
   try {
     const user = await requireUser();
+    // ASSET_HANDLER hanya melihat perawatan aset yang ia PIC/Owner-nya
+    const assetFilter =
+      user.role === "ASSET_HANDLER"
+        ? { asset: { ownerId: (await handlerOwnerId(user)) ?? "__none__" } }
+        : {};
     const items = await prisma.maintenance.findMany({
-      where: { companyId: user.companyId },
+      where: { companyId: user.companyId, ...assetFilter },
       include: { asset: { select: { name: true, systemCode: true } } },
       orderBy: { scheduledDate: "asc" },
       take: 100,

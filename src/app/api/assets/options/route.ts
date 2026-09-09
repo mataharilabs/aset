@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const user = await requireUser();
     const companyId = user.companyId;
-    const [categories, brands, locations, owners, users] = await Promise.all([
+    const [categories, brands, locations, owners] = await Promise.all([
       prisma.category.findMany({
         where: { companyId },
         select: { id: true, name: true },
@@ -27,13 +27,8 @@ export async function GET() {
         select: { id: true, name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.user.findMany({
-        where: { companyId, isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
     ]);
-    return ok({ categories, brands, locations, owners, users });
+    return ok({ categories, brands, locations, owners });
   } catch (e) {
     return handleApiError(e);
   }

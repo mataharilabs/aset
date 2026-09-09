@@ -19,7 +19,7 @@ import { toast } from "@/components/ui/toaster";
 export type FieldDef = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "email";
+  type?: "text" | "textarea" | "email" | "password";
   required?: boolean;
   placeholder?: string;
 };
@@ -35,6 +35,7 @@ type Props = {
   fields: FieldDef[];
   columns: ColumnDef[];
   entityLabel: string; // e.g. "Lokasi"
+  disableEdit?: boolean; // sembunyikan tombol edit (mis. Owner via SSO)
 };
 
 type Row = Record<string, unknown> & { id: string };
@@ -55,6 +56,7 @@ export function MasterManager({
   fields,
   columns,
   entityLabel,
+  disableEdit = false,
 }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,13 +177,15 @@ export function MasterManager({
                   ))}
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(row)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {!disableEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(row)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -222,7 +226,13 @@ export function MasterManager({
               ) : (
                 <Input
                   id={f.name}
-                  type={f.type === "email" ? "email" : "text"}
+                  type={
+                    f.type === "email"
+                      ? "email"
+                      : f.type === "password"
+                      ? "password"
+                      : "text"
+                  }
                   value={form[f.name] ?? ""}
                   placeholder={f.placeholder}
                   onChange={(e) =>

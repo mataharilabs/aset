@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Plus, Loader2, TrendingUp, TrendingDown, Wallet, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -45,6 +45,7 @@ export function FinancialClient() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [assets, setAssets] = useState<{ id: string; name: string }[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({ type: "EXPENSE" });
 
   const load = useCallback(async () => {
@@ -77,11 +78,30 @@ export function FinancialClient() {
       .catch(() => {});
   }, [load]);
 
+  function openCreate() {
+    setEditingId(null);
+    setForm({ type: "EXPENSE" });
+    setOpen(true);
+  }
+
+  function openEdit(f: Row) {
+    setEditingId(f.id);
+    setForm({
+      assetId: (f as unknown as { assetId?: string }).assetId ?? "",
+      type: f.type,
+      amount: f.amount ? String(f.amount) : "",
+      description: f.description ?? "",
+      date: f.date ? String(f.date).slice(0, 10) : "",
+    });
+    setOpen(true);
+  }
+
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch("/api/financial", {
-        method: "POST",
+      const url = editingId ? `/api/financial/${editingId}` : "/api/financial";
+      const res = await fetch(url, {
+        method: editingId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
@@ -89,14 +109,27 @@ export function FinancialClient() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? err.issues?.[0]?.message ?? "Gagal");
       }
-      toast("Catatan keuangan ditambahkan", "success");
+      toast(editingId ? "Catatan diperbarui" : "Catatan keuangan ditambahkan", "success");
       setOpen(false);
+      setEditingId(null);
       setForm({ type: "EXPENSE" });
       load();
     } catch (e) {
       toast((e as Error).message, "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Hapus catatan keuangan ini?")) return;
+    try {
+      const res = await fetch(`/api/financial/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus");
+      toast("Catatan dihapus", "success");
+      load();
+    } catch (e) {
+      toast((e as Error).message, "error");
     }
   }
 
@@ -126,7 +159,7 @@ export function FinancialClient() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={() => setOpen(true)}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
           Tambah Catatan
         </Button>
@@ -152,6 +185,7 @@ export function FinancialClient() {
                 <TableHead>Jenis</TableHead>
                 <TableHead>Deskripsi</TableHead>
                 <TableHead className="text-right">Jumlah</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -174,6 +208,16 @@ export function FinancialClient() {
                   <TableCell className="text-right text-sm font-medium">
                     {formatCurrency(f.amount)}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(f)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove(f.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -184,7 +228,7 @@ export function FinancialClient() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Tambah Catatan Keuangan"
+        title={editingId ? "Edit Catatan Keuangan" : "Tambah Catatan Keuangan"}
       >
         <div className="space-y-4">
           <div className="space-y-1.5">

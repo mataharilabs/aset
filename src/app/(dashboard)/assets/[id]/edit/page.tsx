@@ -25,6 +25,7 @@ export default async function EditAssetPage({
 
   const initial: Partial<AssetInput> = {
     name: asset.name,
+    systemCode: asset.systemCode,
     description: asset.description,
     assetType: asset.assetType,
     status: asset.status,

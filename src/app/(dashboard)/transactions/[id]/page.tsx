@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requireUser, isManagerUp } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +28,7 @@ export default async function TransactionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
+  if (!isManagerUp(user.role)) redirect("/assets");
   const { id } = await params;
 
   const txn = await prisma.assetTransaction.findFirst({
@@ -40,7 +41,9 @@ export default async function TransactionDetailPage({
   });
   if (!txn) notFound();
 
-  const canApprove = isManagerUp(user.role) && txn.status === "PENDING";
+  const isPending = txn.status === "PENDING";
+  const showActions =
+    (isPending && isManagerUp(user.role)) || user.role === "SUPER_ADMIN";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -101,13 +104,17 @@ export default async function TransactionDetailPage({
           </CardContent>
         </Card>
 
-        {canApprove && (
+        {showActions && (
           <Card>
             <CardHeader>
-              <CardTitle>Persetujuan</CardTitle>
+              <CardTitle>Tindakan</CardTitle>
             </CardHeader>
             <CardContent>
-              <ApproveActions transactionId={txn.id} />
+              <ApproveActions
+                transactionId={txn.id}
+                status={txn.status}
+                role={user.role}
+              />
             </CardContent>
           </Card>
         )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Loader2, Wrench, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Wrench, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -48,6 +48,7 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [assets, setAssets] = useState<{ id: string; name: string }[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({
     type: "PREVENTIVE",
   });
@@ -79,11 +80,24 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
       .catch(() => {});
   }, [load]);
 
+  function openEdit(m: Row) {
+    setEditingId(m.id);
+    setForm({
+      assetId: (m as unknown as { assetId?: string }).assetId ?? "",
+      title: m.title,
+      type: m.type,
+      scheduledDate: m.scheduledDate ? String(m.scheduledDate).slice(0, 10) : "",
+      cost: m.cost ? String(m.cost) : "",
+    });
+    setOpen(true);
+  }
+
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch("/api/maintenance", {
-        method: "POST",
+      const url = editingId ? `/api/maintenance/${editingId}` : "/api/maintenance";
+      const res = await fetch(url, {
+        method: editingId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
@@ -91,14 +105,30 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? err.issues?.[0]?.message ?? "Gagal");
       }
-      toast("Jadwal perawatan dibuat", "success");
+      toast(
+        editingId ? "Perawatan diperbarui" : "Jadwal perawatan dibuat",
+        "success"
+      );
       setOpen(false);
+      setEditingId(null);
       setForm({ type: "PREVENTIVE" });
       load();
     } catch (e) {
       toast((e as Error).message, "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Hapus jadwal perawatan ini?")) return;
+    try {
+      const res = await fetch(`/api/maintenance/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus");
+      toast("Perawatan dihapus", "success");
+      load();
+    } catch (e) {
+      toast((e as Error).message, "error");
     }
   }
 
@@ -122,7 +152,13 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
     <div>
       {canManage && (
         <div className="mb-4 flex justify-end">
-          <Button onClick={() => setOpen(true)}>
+          <Button
+            onClick={() => {
+              setEditingId(null);
+              setForm({ type: "PREVENTIVE" });
+              setOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4" />
             Jadwal Baru
           </Button>
@@ -186,16 +222,24 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
                   </TableCell>
                   {canManage && (
                     <TableCell className="text-right">
-                      {m.status !== "COMPLETED" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => complete(m.id)}
-                        >
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                          Selesai
+                      <div className="flex justify-end gap-1">
+                        {m.status !== "COMPLETED" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => complete(m.id)}
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            Selesai
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      )}
+                        <Button variant="ghost" size="icon" onClick={() => remove(m.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -208,7 +252,7 @@ export function MaintenanceClient({ canManage }: { canManage: boolean }) {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Jadwal Perawatan Baru"
+        title={editingId ? "Edit Perawatan" : "Jadwal Perawatan Baru"}
       >
         <div className="space-y-4">
           <div className="space-y-1.5">

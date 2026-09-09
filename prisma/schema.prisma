@@ -203,6 +203,7 @@ model Owner {
   email      String?
   phone      String?
   department String?
+  ssoUserId  String?  @unique // user SSO (ASET:ASSET_HANDLER) yang dicerminkan
   companyId  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

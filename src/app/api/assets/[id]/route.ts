@@ -45,9 +45,19 @@ export async function PUT(
     });
     if (!existing) return handleApiError({ name: "NotFound" });
 
+    // Cek kode unik bila diubah
+    if (data.systemCode && data.systemCode !== existing.systemCode) {
+      const dup = await prisma.asset.findUnique({
+        where: { systemCode: data.systemCode },
+        select: { id: true },
+      });
+      if (dup) return ok({ error: "Kode aset sudah dipakai" }, 409);
+    }
+
     const updated = await prisma.asset.update({
       where: { id },
       data: {
+        ...(data.systemCode ? { systemCode: data.systemCode } : {}),
         name: data.name,
         description: data.description ?? null,
         assetType: data.assetType,

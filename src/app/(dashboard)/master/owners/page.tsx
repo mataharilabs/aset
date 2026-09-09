@@ -11,20 +11,25 @@ export default async function OwnersPage() {
     <div>
       <PageHeader
         title="Owner / PIC"
-        description="Kelola pemilik atau penanggung jawab aset."
+        description="Owner/PIC adalah pengguna SSO ber-akses ASET: Asset Handler. Menambah Owner/PIC otomatis membuat akun di AsiaCommerce ID."
       />
       <MasterManager
         endpoint="/api/master/owners"
-        entityLabel="Owner"
+        entityLabel="Owner / PIC"
+        disableEdit
         fields={[
           { name: "name", label: "Nama", required: true },
-          { name: "department", label: "Departemen" },
-          { name: "email", label: "Email", type: "email" },
-          { name: "phone", label: "Telepon" },
+          { name: "email", label: "Email", type: "email", required: true },
+          {
+            name: "password",
+            label: "Password Awal",
+            type: "password",
+            required: true,
+            placeholder: "Minimal 6 karakter",
+          },
         ]}
         columns={[
           { key: "name", label: "Nama" },
-          { key: "department", label: "Departemen" },
           { key: "email", label: "Email" },
           { key: "_count.assets", label: "Jumlah Aset" },
         ]}

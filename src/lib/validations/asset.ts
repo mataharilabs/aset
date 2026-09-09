@@ -13,6 +13,7 @@ const optionalNumber = z
 
 export const assetSchema = z.object({
   name: z.string().min(1, "Nama aset wajib diisi"),
+  systemCode: optionalString, // kode aset (editable oleh manager+ saat edit)
   description: optionalString,
   assetType: z.enum(["PHYSICAL", "DIGITAL"]).default("PHYSICAL"),
   status: z

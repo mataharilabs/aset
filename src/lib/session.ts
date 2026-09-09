@@ -10,6 +10,8 @@ export type SessionUser = {
   role: Role;
   companyId: string;
   companyName: string;
+  /** companyId di SSO (untuk service call ke SSO). Kosong di mode non-SSO. */
+  ssoCompanyId?: string;
 };
 
 export class AuthError extends Error {
@@ -110,11 +112,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const raw = await getRawUser();
   if (!raw) return null;
   if (ssoEnabled()) {
-    return ensureLocalUser({
+    const local = await ensureLocalUser({
       email: raw.email,
       name: raw.name,
       appRole: raw.apps?.["ASET"],
     });
+    return local ? { ...local, ssoCompanyId: raw.companyId } : null;
   }
   return raw as SessionUser;
 }
@@ -132,7 +135,7 @@ export async function requireUser(): Promise<SessionUser> {
     if (!local) {
       throw new AuthError("Anda tidak memiliki akses ke aplikasi ASET", 403);
     }
-    return local;
+    return { ...local, ssoCompanyId: raw.companyId };
   }
   return raw as SessionUser;
 }
@@ -148,4 +151,17 @@ export async function requireRole(roles: Role[]): Promise<SessionUser> {
 
 export function isManagerUp(role: Role): boolean {
   return role === "SUPER_ADMIN" || role === "ASSET_MANAGER";
+}
+
+/**
+ * Untuk ASSET_HANDLER: id Owner lokal yang mewakili dirinya (match by email).
+ * Dipakai memfilter aset/perawatan "miliknya". Null bila bukan owner mana pun.
+ */
+export async function handlerOwnerId(user: SessionUser): Promise<string | null> {
+  if (!user.email) return null;
+  const owner = await prisma.owner.findFirst({
+    where: { companyId: user.companyId, email: user.email },
+    select: { id: true },
+  });
+  return owner?.id ?? null;
 }

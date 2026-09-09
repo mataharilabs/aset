@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireRole(["SUPER_ADMIN", "ASSET_MANAGER"]);
+    const user = await requireRole(["SUPER_ADMIN"]);
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const action: "APPROVE" | "REJECT" =

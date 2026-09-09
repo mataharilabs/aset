@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil, QrCode, ArrowLeft, Box, Monitor } from "lucide-react";
-import { requireUser, isManagerUp } from "@/lib/session";
+import { requireUser, isManagerUp, handlerOwnerId } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AssetStatusBadge } from "@/components/assets/AssetStatusBadge";
+import { DeleteAssetButton } from "@/components/assets/DeleteAssetButton";
 import {
   ASSET_TYPE_LABELS,
   CONDITION_LABELS,
@@ -39,7 +40,6 @@ export default async function AssetDetailPage({
       brand: true,
       location: true,
       owner: true,
-      assignedTo: { select: { name: true } },
       createdBy: { select: { name: true } },
       maintenances: {
         orderBy: { scheduledDate: "desc" },
@@ -55,6 +55,11 @@ export default async function AssetDetailPage({
   });
 
   if (!asset) notFound();
+  // ASSET_HANDLER hanya boleh melihat aset yang ia PIC/Owner-nya
+  if (!isManagerUp(user.role)) {
+    const ownerId = await handlerOwnerId(user);
+    if (!ownerId || asset.ownerId !== ownerId) notFound();
+  }
   const canEdit = isManagerUp(user.role);
   const isDigital = asset.assetType === "DIGITAL";
 
@@ -93,12 +98,15 @@ export default async function AssetDetailPage({
             </Button>
           </Link>
           {canEdit && (
-            <Link href={`/assets/${asset.id}/edit`}>
-              <Button>
-                <Pencil className="h-4 w-4" />
-                Edit
-              </Button>
-            </Link>
+            <>
+              <Link href={`/assets/${asset.id}/edit`}>
+                <Button>
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </Button>
+              </Link>
+              <DeleteAssetButton assetId={asset.id} />
+            </>
           )}
         </div>
       </div>
@@ -139,7 +147,6 @@ export default async function AssetDetailPage({
           <CardContent>
             <Row label="Owner / PIC" value={asset.owner?.name} />
             <Row label="Lokasi" value={asset.location?.name} />
-            <Row label="Ditugaskan ke" value={asset.assignedTo?.name} />
             <Row label="Dibuat oleh" value={asset.createdBy.name} />
             <Row label="Tanggal dibuat" value={formatDate(asset.createdAt)} />
           </CardContent>

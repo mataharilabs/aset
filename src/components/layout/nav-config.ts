@@ -33,11 +33,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Utama",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ALL },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: MANAGER },
       { label: "Aset", href: "/assets", icon: Package, roles: ALL },
-      { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight, roles: ALL },
+      { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight, roles: MANAGER },
       { label: "Perawatan", href: "/maintenance", icon: Wrench, roles: ALL },
-      { label: "Scan QR", href: "/scan", icon: QrCode, roles: ALL },
+      { label: "Scan QR", href: "/scan", icon: QrCode, roles: MANAGER },
     ],
   },
   {

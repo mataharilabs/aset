@@ -7,7 +7,8 @@ import {
   Clock,
   Wallet,
 } from "lucide-react";
-import { requireUser } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { requireUser, isManagerUp } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -18,6 +19,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  // ASSET_HANDLER tidak punya dashboard → langsung ke daftar aset miliknya
+  if (!isManagerUp(user.role)) redirect("/assets");
   const companyId = user.companyId;
 
   const [
