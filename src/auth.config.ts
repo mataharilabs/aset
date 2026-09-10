@@ -1,7 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 
 const isProd = process.env.NODE_ENV === "production";
-const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+// Samakan dengan SSO: di produksi cookie ter-scope ke seluruh subdomain
+// agar sesi SSO terbaca oleh ASET (fallback bila COOKIE_DOMAIN lupa di-set).
+const cookieDomain =
+  process.env.COOKIE_DOMAIN || (isProd ? ".asiacommerce.net" : undefined);
 
 // Nama cookie HARUS identik dengan SSO (default Auth.js) agar JWT bisa
 // didekripsi lintas app (nama cookie = salt enkripsi).
