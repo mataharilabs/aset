@@ -47,6 +47,8 @@ export function AssetForm({ assetId, initial }: Props) {
     register,
     handleSubmit,
     watch,
+    reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<AssetFormInput, unknown, AssetFormOutput>({
     resolver: zodResolver(assetSchema),
@@ -65,8 +67,14 @@ export function AssetForm({ assetId, initial }: Props) {
   useEffect(() => {
     fetch("/api/assets/options")
       .then((r) => r.json())
-      .then(setOptions)
+      .then((data) => {
+        setOptions(data);
+        // Terapkan ulang nilai form ke <select> setelah opsinya termuat,
+        // agar Kategori/Owner/Lokasi/Merk yang tersimpan ikut terpilih.
+        reset(getValues());
+      })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function onSubmit(values: AssetFormOutput) {

@@ -27,7 +27,6 @@ export type NavGroup = {
 
 const ALL: NavRole[] = ["SUPER_ADMIN", "ASSET_MANAGER", "ASSET_HANDLER"];
 const MANAGER: NavRole[] = ["SUPER_ADMIN", "ASSET_MANAGER"];
-const ADMIN: NavRole[] = ["SUPER_ADMIN"];
 
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -57,7 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Pengaturan",
     items: [
-      { label: "Perusahaan", href: "/settings/company", icon: Building2, roles: ADMIN },
+      { label: "Perusahaan", href: "/settings/company", icon: Building2, roles: MANAGER },
     ],
   },
 ];

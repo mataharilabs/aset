@@ -7,6 +7,10 @@ import {
   Tag,
   ShieldCheck,
   Award,
+  UserCircle,
+  Calendar,
+  Wallet,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -14,8 +18,12 @@ import { getCurrentUser } from "@/lib/session";
 import { logAudit } from "@/lib/audit";
 import { Card, CardContent } from "@/components/ui/card";
 import { AssetStatusBadge } from "@/components/assets/AssetStatusBadge";
-import { ASSET_TYPE_LABELS, CONDITION_LABELS } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import {
+  ASSET_TYPE_LABELS,
+  CONDITION_LABELS,
+  MAINTENANCE_STATUS_LABELS,
+} from "@/lib/constants";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 export default async function ScanLandingPage({
   params,
@@ -32,6 +40,16 @@ export default async function ScanLandingPage({
       location: { select: { name: true } },
       owner: { select: { name: true } },
       company: { select: { name: true } },
+      maintenances: {
+        orderBy: { scheduledDate: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          scheduledDate: true,
+          status: true,
+        },
+      },
     },
   });
 
@@ -111,7 +129,51 @@ export default async function ScanLandingPage({
                 {asset.brand && (
                   <Info icon={Award} label="Merk" value={asset.brand.name} />
                 )}
+                {asset.owner && (
+                  <Info
+                    icon={UserCircle}
+                    label="Owner / PIC"
+                    value={asset.owner.name}
+                  />
+                )}
+                {asset.purchaseDate && (
+                  <Info
+                    icon={Calendar}
+                    label="Tgl Pembelian"
+                    value={formatDate(asset.purchaseDate)}
+                  />
+                )}
+                {asset.purchasePrice && (
+                  <Info
+                    icon={Wallet}
+                    label="Harga Beli"
+                    value={formatCurrency(asset.purchasePrice.toString())}
+                  />
+                )}
               </div>
+
+              {asset.maintenances.length > 0 && (
+                <div className="space-y-2 border-t border-slate-100 pt-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    <Wrench className="h-3.5 w-3.5" />
+                    Riwayat Perawatan
+                  </div>
+                  {asset.maintenances.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="min-w-0 truncate text-slate-700">
+                        {m.title}
+                      </span>
+                      <span className="shrink-0 text-xs text-slate-400">
+                        {formatDate(m.scheduledDate)} ·{" "}
+                        {MAINTENANCE_STATUS_LABELS[m.status] ?? m.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="border-t border-slate-100 pt-3 text-center text-xs text-slate-400">
                 {asset.company.name} · Terdaftar {formatDate(asset.createdAt)}

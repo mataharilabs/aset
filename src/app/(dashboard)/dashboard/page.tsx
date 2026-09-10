@@ -6,6 +6,8 @@ import {
   ArrowLeftRight,
   Clock,
   Wallet,
+  Plus,
+  QrCode,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { requireUser, isManagerUp } from "@/lib/session";
@@ -68,6 +70,36 @@ export default async function DashboardPage() {
         title={`Halo, ${user.name ?? "User"} 👋`}
         description="Ringkasan aset dan aktivitas perusahaan Anda."
       />
+
+      {/* Aksi cepat */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <Link href="/assets/new">
+          <Card className="group flex items-center gap-4 p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
+              <Plus className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="font-semibold text-slate-900">Tambah Aset</div>
+              <div className="text-sm text-slate-500">
+                Daftarkan aset fisik atau digital baru
+              </div>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/scan">
+          <Card className="group flex items-center gap-4 p-5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
+              <QrCode className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="font-semibold text-slate-900">Scan QR Aset</div>
+              <div className="text-sm text-slate-500">
+                Pindai QR untuk melihat detail aset
+              </div>
+            </div>
+          </Card>
+        </Link>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
