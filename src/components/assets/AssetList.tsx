@@ -20,7 +20,7 @@ import {
   ASSET_STATUS_LABELS,
   ASSET_TYPE_LABELS,
 } from "@/lib/constants";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Asset = {
   id: string;
@@ -29,8 +29,12 @@ type Asset = {
   assetType: string;
   status: string;
   currentValue: string | null;
+  quantity: number | null;
+  quantityUnit: string | null;
+  purchaseDate: string | null;
   category?: { name: string } | null;
   location?: { name: string } | null;
+  owner?: { name: string } | null;
 };
 
 type Option = { id: string; name: string };
@@ -156,7 +160,10 @@ export function AssetList({ canCreate }: { canCreate: boolean }) {
                   <TableHead>Nama</TableHead>
                   <TableHead>Tipe</TableHead>
                   <TableHead>Kategori</TableHead>
+                  <TableHead>Qty</TableHead>
+                  <TableHead>Owner / PIC</TableHead>
                   <TableHead>Lokasi</TableHead>
+                  <TableHead>Tgl Beli</TableHead>
                   <TableHead>Nilai</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -193,8 +200,18 @@ export function AssetList({ canCreate }: { canCreate: boolean }) {
                     <TableCell className="text-sm">
                       {a.category?.name ?? "-"}
                     </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">
+                      {a.quantity ?? 1}
+                      {a.quantityUnit ? ` ${a.quantityUnit}` : ""}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {a.owner?.name ?? "-"}
+                    </TableCell>
                     <TableCell className="text-sm">
                       {a.location?.name ?? "-"}
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">
+                      {a.purchaseDate ? formatDate(a.purchaseDate) : "-"}
                     </TableCell>
                     <TableCell className="text-sm">
                       {formatCurrency(a.currentValue)}

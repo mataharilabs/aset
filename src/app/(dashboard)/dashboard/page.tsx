@@ -45,9 +45,9 @@ export default async function DashboardPage() {
       take: 5,
       include: { asset: { select: { name: true, systemCode: true } } },
     }),
-    prisma.asset.aggregate({
+    prisma.asset.findMany({
       where: { companyId },
-      _sum: { currentValue: true },
+      select: { currentValue: true, quantity: true },
     }),
     prisma.asset.findMany({
       where: { companyId },
@@ -62,7 +62,13 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const totalValue = totalValueAgg._sum.currentValue?.toString() ?? "0";
+  // Grand total = Σ(nilai kini per satuan × kuantiti)
+  const totalValue = totalValueAgg
+    .reduce(
+      (sum, a) => sum + Number(a.currentValue ?? 0) * (a.quantity ?? 1),
+      0
+    )
+    .toString();
 
   return (
     <div>

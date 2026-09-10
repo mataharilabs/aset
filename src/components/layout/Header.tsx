@@ -4,7 +4,8 @@ import { useState } from "react";
 import { LogOut, ChevronDown } from "lucide-react";
 import { logout } from "@/lib/actions/auth";
 import { initials } from "@/lib/utils";
-import { ROLE_LABELS } from "@/lib/constants";
+import { ROLE_LABELS, type NavRole } from "@/lib/constants";
+import { MobileNav } from "./MobileNav";
 
 type HeaderProps = {
   name: string;
@@ -17,12 +18,15 @@ export function Header({ name, email, role, companyName }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <div>
-        <div className="text-sm font-semibold text-slate-800">
-          {companyName}
+    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+      <div className="flex items-center gap-2">
+        <MobileNav role={role as NavRole} />
+        <div>
+          <div className="text-sm font-semibold text-slate-800">
+            {companyName}
+          </div>
+          <div className="text-xs text-slate-400">Manajemen Aset</div>
         </div>
-        <div className="text-xs text-slate-400">Manajemen Aset</div>
       </div>
 
       <div className="relative">

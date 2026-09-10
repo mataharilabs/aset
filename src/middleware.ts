@@ -15,6 +15,7 @@ export default auth((req) => {
     path.startsWith("/login") ||
     path.startsWith("/register") ||
     path.startsWith("/scan") ||
+    path.startsWith("/public") ||
     path.startsWith("/no-access") ||
     path === "/";
 

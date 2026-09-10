@@ -41,6 +41,17 @@ export const assetSchema = z.object({
   locationId: optionalString,
   assignedToId: optionalString,
 
+  quantity: z
+    .union([z.number(), z.string()])
+    .optional()
+    .nullable()
+    .transform((v) => {
+      if (v === null || v === undefined || v === "") return 1;
+      const n = typeof v === "string" ? Number(v) : v;
+      return Number.isNaN(n) || n < 1 ? 1 : Math.floor(n);
+    }),
+  quantityUnit: optionalString,
+
   purchaseDate: optionalString,
   purchasePrice: optionalNumber,
   currentValue: optionalNumber,

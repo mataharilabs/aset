@@ -304,16 +304,32 @@ export function AssetForm({ assetId, initial }: Props) {
           <CardTitle>Keuangan & Penyusutan</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Kuantiti</Label>
+              <Input type="number" min={1} step={1} {...register("quantity")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Satuan</Label>
+              <Select {...register("quantityUnit")}>
+                <option value="">- Pilih -</option>
+                <option value="pcs">pcs</option>
+                <option value="unit">unit</option>
+                <option value="set">set</option>
+                <option value="lusin">lusin</option>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label>Tanggal Pembelian</Label>
             <Input type="date" {...register("purchaseDate")} />
           </div>
           <div className="space-y-1.5">
-            <Label>Harga Pembelian (Rp)</Label>
+            <Label>Harga Pembelian (Rp / satuan)</Label>
             <Input type="number" step="any" {...register("purchasePrice")} />
           </div>
           <div className="space-y-1.5">
-            <Label>Nilai Saat Ini (Rp)</Label>
+            <Label>Nilai Saat Ini (Rp / satuan)</Label>
             <Input type="number" step="any" {...register("currentValue")} />
           </div>
           <div className="space-y-1.5">

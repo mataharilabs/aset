@@ -39,6 +39,8 @@ export default async function EditAssetPage({
     ownerId: asset.ownerId,
     locationId: asset.locationId,
     assignedToId: asset.assignedToId,
+    quantity: asset.quantity ?? 1,
+    quantityUnit: asset.quantityUnit,
     purchaseDate: toDateInput(asset.purchaseDate),
     purchasePrice: asset.purchasePrice
       ? Number(asset.purchasePrice)

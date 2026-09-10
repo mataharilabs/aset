@@ -243,6 +243,9 @@ model Asset {
   locationId   String?
   assignedToId String?
 
+  quantity     Int?    @default(1)
+  quantityUnit String? // pcs, unit, set, lusin
+
   purchaseDate       DateTime?
   purchasePrice      Decimal?           @db.Decimal(15, 2)
   currentValue       Decimal?           @db.Decimal(15, 2)

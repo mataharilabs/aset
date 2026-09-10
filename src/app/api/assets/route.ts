@@ -91,6 +91,8 @@ export async function POST(req: NextRequest) {
         ownerId: data.ownerId || null,
         locationId: data.locationId || null,
         assignedToId: data.assignedToId || null,
+        quantity: data.quantity ?? 1,
+        quantityUnit: data.quantityUnit ?? null,
         purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
         purchasePrice: data.purchasePrice ?? null,
         currentValue: data.currentValue ?? data.purchasePrice ?? null,
