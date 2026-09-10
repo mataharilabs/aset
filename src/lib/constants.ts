@@ -11,6 +11,17 @@ export const ASSET_TYPE_LABELS: Record<string, string> = {
   DIGITAL: "Digital",
 };
 
+export const PAYMENT_STRUCTURE_LABELS: Record<string, string> = {
+  ONE_TIME: "One-time",
+  RECURRING: "Recurring",
+};
+
+export const PAYMENT_FREQUENCY_LABELS: Record<string, string> = {
+  DAILY: "Harian",
+  MONTHLY: "Bulanan",
+  ANNUAL: "Tahunan",
+};
+
 export const ASSET_STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Aktif",
   INACTIVE: "Non-Aktif",

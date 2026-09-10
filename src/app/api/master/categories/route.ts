@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: data.name,
         description: data.description ?? null,
+        assetType: data.assetType ?? null,
         parentId: data.parentId || null,
         companyId: user.companyId,
       },

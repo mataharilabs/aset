@@ -147,13 +147,14 @@ enum EmploymentStatus {
 // ============================================================
 
 model Category {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
+  assetType   AssetType? // batasi kategori ke tipe aset tertentu (null = semua)
   parentId    String?
   companyId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   company  Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
@@ -250,10 +251,14 @@ model Asset {
   depreciationMethod DepreciationMethod @default(STRAIGHT_LINE)
 
   // Digital asset fields
-  domain      String?
-  expiryDate  DateTime?
-  credentials Json?
-  licenseKey  String?
+  domain             String?
+  expiryDate         DateTime?
+  credentials        Json?
+  licenseKey         String?
+  paymentStructure   PaymentStructure?
+  paymentFrequency   PaymentFrequency?
+  credentialUsername String? // Email/Username
+  credentialPassword String? // Credentials/Password
 
   images    String[]
   documents String[]
@@ -289,6 +294,17 @@ model Asset {
 enum AssetType {
   PHYSICAL
   DIGITAL
+}
+
+enum PaymentStructure {
+  ONE_TIME
+  RECURRING
+}
+
+enum PaymentFrequency {
+  DAILY
+  MONTHLY
+  ANNUAL
 }
 
 enum AssetStatus {

@@ -4,6 +4,10 @@ export const categorySchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   description: z.string().optional().nullable(),
   parentId: z.string().optional().nullable(),
+  assetType: z.preprocess(
+    (v) => (v === "" || v === undefined ? null : v),
+    z.enum(["PHYSICAL", "DIGITAL"]).nullable().optional()
+  ),
 });
 
 export const locationSchema = z.object({

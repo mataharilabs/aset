@@ -54,6 +54,18 @@ export const assetSchema = z.object({
   domain: optionalString,
   expiryDate: optionalString,
   licenseKey: optionalString,
+  paymentStructure: z
+    .preprocess(
+      (v) => (v === "" || v === undefined ? null : v),
+      z.enum(["ONE_TIME", "RECURRING"]).nullable().optional()
+    ),
+  paymentFrequency: z
+    .preprocess(
+      (v) => (v === "" || v === undefined ? null : v),
+      z.enum(["DAILY", "MONTHLY", "ANNUAL"]).nullable().optional()
+    ),
+  credentialUsername: optionalString,
+  credentialPassword: optionalString,
 
   notes: optionalString,
   tags: z.array(z.string()).optional().default([]),

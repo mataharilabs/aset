@@ -26,6 +26,7 @@ export async function PUT(
       data: {
         name: data.name,
         description: data.description ?? null,
+        assetType: data.assetType ?? null,
         parentId: data.parentId || null,
       },
     });

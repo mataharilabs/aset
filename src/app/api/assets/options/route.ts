@@ -9,7 +9,7 @@ export async function GET() {
     const [categories, brands, locations, owners] = await Promise.all([
       prisma.category.findMany({
         where: { companyId },
-        select: { id: true, name: true },
+        select: { id: true, name: true, assetType: true },
         orderBy: { name: "asc" },
       }),
       prisma.brand.findMany({

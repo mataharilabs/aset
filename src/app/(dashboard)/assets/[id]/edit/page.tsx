@@ -50,6 +50,10 @@ export default async function EditAssetPage({
     domain: asset.domain,
     expiryDate: toDateInput(asset.expiryDate),
     licenseKey: asset.licenseKey,
+    paymentStructure: asset.paymentStructure,
+    paymentFrequency: asset.paymentFrequency,
+    credentialUsername: asset.credentialUsername,
+    credentialPassword: asset.credentialPassword,
     notes: asset.notes,
     tags: asset.tags,
   };

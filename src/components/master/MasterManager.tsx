@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input, Label, Textarea, Select } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -19,15 +19,17 @@ import { toast } from "@/components/ui/toaster";
 export type FieldDef = {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "email" | "password";
+  type?: "text" | "textarea" | "email" | "password" | "select";
   required?: boolean;
   placeholder?: string;
+  options?: { value: string; label: string }[];
 };
 
 export type ColumnDef = {
   key: string;
   label: string;
   render?: (row: Record<string, unknown>) => React.ReactNode;
+  map?: Record<string, string>; // peta nilai → label (mis. enum), serializable
 };
 
 type Props = {
@@ -172,7 +174,11 @@ export function MasterManager({
                 <TableRow key={row.id}>
                   {columns.map((c) => (
                     <TableCell key={c.key}>
-                      {c.render ? c.render(row) : resolve(row, c.key)}
+                      {c.render
+                        ? c.render(row)
+                        : c.map
+                        ? c.map[resolve(row, c.key)] ?? resolve(row, c.key)
+                        : resolve(row, c.key)}
                     </TableCell>
                   ))}
                   <TableCell className="text-right">
@@ -223,6 +229,20 @@ export function MasterManager({
                     setForm((p) => ({ ...p, [f.name]: e.target.value }))
                   }
                 />
+              ) : f.type === "select" ? (
+                <Select
+                  id={f.name}
+                  value={form[f.name] ?? ""}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, [f.name]: e.target.value }))
+                  }
+                >
+                  {(f.options ?? []).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
               ) : (
                 <Input
                   id={f.name}

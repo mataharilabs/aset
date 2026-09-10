@@ -22,8 +22,9 @@ import {
 } from "@/lib/constants";
 
 type Option = { id: string; name: string };
+type CatOption = { id: string; name: string; assetType?: string | null };
 type Options = {
-  categories: Option[];
+  categories: CatOption[];
   brands: Option[];
   locations: Option[];
   owners: Option[];
@@ -63,6 +64,7 @@ export function AssetForm({ assetId, initial }: Props) {
   });
 
   const assetType = watch("assetType");
+  const paymentStructure = watch("paymentStructure");
 
   useEffect(() => {
     fetch("/api/assets/options")
@@ -136,11 +138,13 @@ export function AssetForm({ assetId, initial }: Props) {
             <Label>Kategori *</Label>
             <Select {...register("categoryId")}>
               <option value="">Pilih kategori</option>
-              {options.categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {options.categories
+                .filter((c) => !c.assetType || c.assetType === assetType)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
             </Select>
             {err("categoryId")}
           </div>
@@ -223,6 +227,43 @@ export function AssetForm({ assetId, initial }: Props) {
             <div className="space-y-1.5">
               <Label>Tanggal Kadaluarsa</Label>
               <Input type="date" {...register("expiryDate")} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Struktur Pembayaran</Label>
+              <Select {...register("paymentStructure")}>
+                <option value="">- Pilih -</option>
+                <option value="ONE_TIME">One-time</option>
+                <option value="RECURRING">Recurring</option>
+              </Select>
+            </div>
+            {paymentStructure === "RECURRING" && (
+              <div className="space-y-1.5">
+                <Label>Frekuensi Pembayaran</Label>
+                <Select {...register("paymentFrequency")}>
+                  <option value="">- Pilih -</option>
+                  <option value="DAILY">Harian</option>
+                  <option value="MONTHLY">Bulanan</option>
+                  <option value="ANNUAL">Tahunan</option>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label>Email / Username</Label>
+              <Input
+                {...register("credentialUsername")}
+                autoComplete="off"
+                placeholder="akun@contoh.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Credentials / Password</Label>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                {...register("credentialPassword")}
+              />
             </div>
           </CardContent>
         </Card>
