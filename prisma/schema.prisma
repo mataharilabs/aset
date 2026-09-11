@@ -167,12 +167,13 @@ model Category {
 }
 
 model Location {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  companyId   String
+  ssoOfficeId String? // cermin master Office di SSO (sumber tunggal)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assets             Asset[]
@@ -180,6 +181,7 @@ model Location {
 
   @@unique([name, companyId])
   @@index([companyId])
+  @@index([ssoOfficeId])
   @@map("locations")
 }
 

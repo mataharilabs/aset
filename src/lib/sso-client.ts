@@ -7,6 +7,16 @@ const APP = "ASET";
 
 export type AppUser = { id: string; name: string | null; email: string; role?: string };
 
+export type SsoOffice = {
+  id: string;
+  name: string;
+  country: string | null;
+  province: string | null;
+  city: string | null;
+  address: string | null;
+  isPrimary: boolean;
+};
+
 function ready(): boolean {
   return Boolean(SSO_URL && KEY);
 }
@@ -76,6 +86,19 @@ export async function createAppUser(input: {
     throw new Error(data.error ?? "Gagal membuat user di SSO");
   }
   return data as AppUser;
+}
+
+/** Daftar kantor (Office) dari master SSO untuk company tertentu. */
+export async function listOffices(opts: {
+  companyId?: string;
+}): Promise<SsoOffice[]> {
+  if (!ready()) return [];
+  const qs = new URLSearchParams();
+  if (opts.companyId) qs.set("companyId", opts.companyId);
+  const res = await ssoFetch(`/api/service/offices?${qs}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.offices ?? [];
 }
 
 /** Cabut akses ASET dari user SSO. */
