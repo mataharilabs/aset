@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/session";
 import { handleApiError, ok } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { listAppUsers, createAppUser, type AppUser } from "@/lib/sso-client";
+import { notify } from "@/lib/notify-client";
 
 /**
  * Sinkronkan Owner/PIC lokal dari user SSO ber-role ASET:ASSET_HANDLER.
@@ -113,6 +114,17 @@ export async function POST(req: NextRequest) {
       entityType: "Owner",
       entityId: ownerId,
       newValues: { name: data.name, email: data.email, role: "ASSET_HANDLER" },
+    });
+
+    // Notifikasi selamat datang ke PIC/Owner baru (best-effort).
+    await notify({
+      to: { email: data.email },
+      subject: "Akses Manajemen Aset AsiaCommerce",
+      message:
+        `Halo ${data.name},\n\n` +
+        `Anda telah didaftarkan sebagai PIC/Owner aset di aplikasi ASET AsiaCommerce. ` +
+        `Silakan login di https://aset.asiacommerce.net menggunakan email ini.\n\n` +
+        `— ASET AsiaCommerce`,
     });
 
     return ok({ id: ownerId }, 201);
